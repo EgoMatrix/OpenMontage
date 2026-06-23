@@ -1,0 +1,65 @@
+# OpenMontage — uv-managed project metadata.
+#
+# This file is ADDITIVE. It mirrors the dependency sets declared in
+# requirements.txt / requirements-dev.txt / requirements-gpu.txt / setup.py so
+# that `uv` can manage the environment with a single lockfile. The legacy pip
+# files are intentionally left untouched so that:
+#   1. `pip install -r requirements.txt` keeps working for non-uv users.
+#   2. Merging upstream (official) changes stays conflict-free — upstream only
+#      edits the requirements*.txt / setup.py files, never this one.
+#
+# `package = false` (see [tool.uv]) means uv only installs dependencies into the
+# virtualenv and does NOT try to build/install OpenMontage itself. The project
+# runs in-place from the repo root exactly like before, so setup.py is never
+# invoked and there is no duplicate-metadata conflict with it.
+#
+# When upstream changes a dependency in requirements*.txt, mirror it here and run
+# `uv lock` (or `make uv-lock`).
+
+[project]
+name = "openmontage"
+version = "0.1.0"
+description = "AI-Orchestrated Video Production Platform"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0",
+    "pydantic>=2.0",
+    "jsonschema>=4.20",
+    "python-dotenv>=1.0",
+    "Pillow>=10.0",
+    "requests>=2.31",
+    # numpy is imported at module top-level by several tools (e.g.
+    # tools/video/green_screen_composite.py, lib/clip_embedder.py, lib/corpus.py).
+    # It is NOT listed in requirements.txt — that gap is masked on systems where
+    # numpy is already present (e.g. Anaconda), but a clean environment makes
+    # registry.discover() crash without it. Declared here so the uv env works.
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+# Mirrors requirements-dev.txt
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+# Mirrors requirements-gpu.txt (+ the extra packages installed by `make install-gpu`)
+gpu = [
+    "torch>=2.0",
+    "torchaudio>=2.0",
+    "torchvision>=0.15",
+    "diffusers",
+    "transformers",
+    "accelerate",
+]
+# Optional free offline TTS (best-effort — may fail to build on some platforms)
+piper = [
+    "piper-tts",
+]
+
+[tool.uv]
+# Treat OpenMontage as an application, not an installable library: uv manages
+# only the dependency environment and never builds the project via setup.py.
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

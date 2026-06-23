@@ -78,3 +78,67 @@ lint:
 
 clean:
 	python -c "import pathlib, shutil; [shutil.rmtree(p) for p in pathlib.Path('.').rglob('__pycache__')]; [p.unlink() for p in pathlib.Path('.').rglob('*.pyc')]"
+
+# =====================================================================
+# uv-based workflow (additive — the pip targets above still work)
+#
+# uv (https://docs.astral.sh/uv) gives a single, fast, reproducible way to
+# manage the Python environment from pyproject.toml + uv.lock. Run any Python
+# entrypoint with `uv run <cmd>` and it executes inside the synced .venv.
+#
+#   make uv-setup   # one-command bootstrap: Python deps + Remotion + .env
+#   make uv-test    # run the test suite inside the uv environment
+#
+# These targets are kept in a separate block with their own .PHONY line so that
+# pulling upstream changes to the Makefile never produces a merge conflict here.
+# =====================================================================
+.PHONY: uv-setup uv-install uv-install-dev uv-install-gpu uv-lock uv-sync uv-test uv-preflight uv-demo uv-clean
+
+# One-command setup, uv flavour. Mirrors `make setup` but uses uv for Python.
+uv-setup:
+	@echo "==> Syncing Python dependencies with uv (core + dev)..."
+	uv sync --extra dev
+	@echo ""
+	@echo "==> Installing free offline TTS (Piper) — best effort..."
+	uv pip install piper-tts || echo "  [skip] piper-tts install failed — TTS will use cloud providers instead"
+	@echo ""
+	@echo "==> Installing Remotion composer..."
+	cd remotion-composer && npm install
+	@echo ""
+	@echo "==> Warming HyperFrames npx cache (~20MB)..."
+	@npx --yes hyperframes --version >/dev/null 2>&1 && echo "    HyperFrames CLI cached (npx)" || echo "  [skip] HyperFrames cache-warm failed — first render will fetch on demand"
+	@echo ""
+	uv run python -c "import shutil, os; e=os.path.exists('.env'); shutil.copy('.env.example','.env') if not e else None; print('==> Created .env from .env.example — add your API keys there.' if not e else '==> .env already exists — skipping.')"
+	@echo ""
+	@echo "Done! Activate with 'source .venv/bin/activate' or just prefix commands with 'uv run'."
+	@echo "  Optional: 'make uv-install-gpu' if you have an NVIDIA GPU."
+
+# Dependency installs (uv resolves from pyproject.toml + uv.lock)
+uv-install:
+	uv sync
+
+uv-install-dev:
+	uv sync --extra dev
+
+uv-install-gpu:
+	uv sync --extra gpu
+
+# Regenerate / refresh the lockfile after editing pyproject.toml
+uv-lock:
+	uv lock
+
+uv-sync:
+	uv sync
+
+# Testing / utilities, run inside the uv environment
+uv-test:
+	uv run python -m pytest tests/ -v
+
+uv-preflight:
+	uv run python -c "from tools.tool_registry import registry; import json; registry.discover(); print(json.dumps(registry.provider_menu(), indent=2))"
+
+uv-demo:
+	uv run python render_demo.py
+
+uv-clean:
+	rm -rf .venv

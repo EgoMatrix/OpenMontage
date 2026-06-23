@@ -6,6 +6,10 @@ __pycache__/
 dist/
 build/
 
+# uv / virtualenv (uv.lock IS committed for reproducible installs)
+.venv/
+venv/
+
 # Test/IDE
 .pytest_cache/
 .mypy_cache/

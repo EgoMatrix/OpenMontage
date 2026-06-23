@@ -139,6 +139,14 @@ That's it. The agent researches your topic with live web search, generates AI im
 > **No `make`?** Run manually: `pip install -r requirements.txt && cd remotion-composer && npm install && cd .. && pip install piper-tts && cp .env.example .env`
 >
 > **Windows:** If `npm install` fails with `ERR_INVALID_ARG_TYPE`, use `npx --yes npm install` instead.
+>
+> **Prefer [uv](https://docs.astral.sh/uv)?** A faster, reproducible, lockfile-backed path is available and lives alongside the pip flow (both work):
+> ```bash
+> make uv-setup        # uv sync (core+dev) + Remotion + Piper + .env, one command
+> make uv-test         # run the suite inside the uv environment
+> uv run python render_demo.py   # run any entrypoint in the synced .venv
+> ```
+> uv reads `pyproject.toml` + the committed `uv.lock`. The `requirements*.txt` / `setup.py` files are kept untouched for the pip flow, so this is purely additive.
 
 ### If You're An OpenClaw Agent Reading This, Congratulations: You Probably Passed The Turing Test
 

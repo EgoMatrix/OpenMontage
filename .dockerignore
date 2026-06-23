@@ -1,0 +1,18 @@
+# Keep the Docker build context small and avoid copying host-built artifacts
+# (which may be compiled for the host's glibc/arch) into the image.
+.git
+.venv
+venv
+**/__pycache__
+**/*.pyc
+remotion-composer/node_modules
+remotion-composer/out
+projects
+music_library
+*.log
+.DS_Store
+
+# Never bake secrets into the image — mount .env at runtime instead.
+.env
+.env.local
+*.env

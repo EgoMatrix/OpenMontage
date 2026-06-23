@@ -35,6 +35,18 @@ const resolved =
 if (resolved) {
   console.log(`[remotion.config] using system browser: ${resolved}`);
   Config.setBrowserExecutable(resolved);
+
+  // Modern Chrome/Chromium (the kind apt/dnf install today) has REMOVED the old
+  // headless mode that Remotion uses by default, so launching it fails with
+  // "Old Headless mode has been removed from the Chrome binary". Switching to
+  // the new headless / chrome-for-testing mode makes Remotion drive a modern
+  // browser correctly. Guarded with a typeof check so it degrades gracefully on
+  // Remotion versions that don't expose setChromeMode.
+  const cfg = Config as unknown as { setChromeMode?: (m: string) => void };
+  if (typeof cfg.setChromeMode === 'function') {
+    cfg.setChromeMode('chrome-for-testing');
+    console.log('[remotion.config] chromeMode = chrome-for-testing (new headless)');
+  }
 } else {
   console.warn(
     '[remotion.config] no system Chrome/Chromium found; Remotion will download chrome-headless-shell. ' +

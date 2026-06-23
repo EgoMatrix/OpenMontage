@@ -142,3 +142,17 @@ uv-demo:
 
 uv-clean:
 	rm -rf .venv
+
+# ---- Docker (run the whole stack in a glibc 2.31+ container) ----
+.PHONY: docker-build docker-demo docker-shell
+
+docker-build:
+	docker build -t openmontage .
+
+# Render the zero-key demos inside the container; outputs land in ./projects on the host.
+docker-demo:
+	docker run --rm -it -v "$(PWD)/projects:/app/projects" openmontage make uv-demo
+
+# Interactive shell inside the container, with .env + projects mounted.
+docker-shell:
+	docker run --rm -it -v "$(PWD)/projects:/app/projects" -v "$(PWD)/.env:/app/.env" openmontage bash
